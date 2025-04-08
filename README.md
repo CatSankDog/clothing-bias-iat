@@ -1,1 +1,1 @@
-# clothing-bias-iat
+# research-psych-iat-caporro

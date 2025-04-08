@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clothing-Based IAT</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f7f7f7;
+            padding: 40px;
+        }
+        #category, #stimulus {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        #image {
+            max-width: 350px;
+            height: auto;
+            margin: 20px 0;
+        }
+        #endMessage {
+            font-size: 22px;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="category">Practice Round: Press "E" for Professional, "I" for Unprofessional</div>
+<div id="stimulus"></div>
+<img id="image" src="" alt="" style="display:none;">
+<div id="endMessage" style="display:none;">Thank you for participating!</div>
+
+<script>
+const professionalWords = ["Hire", "Capable", "Reliable", "Leader", "Competent", "Trustworthy"];
+const unprofessionalWords = ["Pass", "Unqualified", "Disorganized", "Risky", "Immature", "Unprepared"];
+const designerImages = ["designer1.jpg", "designer2.jpg", "designer3.jpg"];
+const casualImages = ["casual1.jpg", "casual2.jpg", "casual3.jpg"];
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function createTrials(images, words, category, key) {
+    const trials = [];
+    images.forEach(img => {
+        words.forEach(word => {
+            trials.push({ img: img, word: word, category: category, key: key });
+        });
+    });
+    return shuffle(trials);
+}
+
+// Randomize block order and key mappings
+let blockOrder = Math.random() < 0.5 ? 1 : 2;
+let eKeyLabel, iKeyLabel;
+let practiceBlock = [], testBlock1 = [], testBlock2 = [];
+
+if (blockOrder === 1) {
+    eKeyLabel = 'E = Professional';
+    iKeyLabel = 'I = Unprofessional';
+
+    practiceBlock = shuffle([
+        ...createTrials(designerImages, professionalWords.slice(0, 2), "Professional", "e"),
+        ...createTrials(casualImages, unprofessionalWords.slice(0, 2), "Unprofessional", "i")
+    ]);
+
+    testBlock1 = shuffle([
+        ...createTrials(designerImages, professionalWords, "Professional", "e"),
+        ...createTrials(casualImages, unprofessionalWords, "Unprofessional", "i")
+    ]);
+
+    testBlock2 = shuffle([
+        ...createTrials(designerImages, professionalWords, "Unprofessional", "e"),
+        ...createTrials(casualImages, unprofessionalWords, "Professional", "i")
+    ]);
+} else {
+    eKeyLabel = 'E = Unprofessional';
+    iKeyLabel = 'I = Professional';
+
+    practiceBlock = shuffle([
+        ...createTrials(casualImages, unprofessionalWords.slice(0, 2), "Unprofessional", "e"),
+        ...createTrials(designerImages, professionalWords.slice(0, 2), "Professional", "i")
+    ]);
+
+    testBlock1 = shuffle([
+        ...createTrials(casualImages, unprofessionalWords, "Unprofessional", "e"),
+        ...createTrials(designerImages, professionalWords, "Professional", "i")
+    ]);
+
+    testBlock2 = shuffle([
+        ...createTrials(casualImages, unprofessionalWords, "Professional", "i"),
+        ...createTrials(designerImages, professionalWords, "Unprofessional", "e")
+    ]);
+}
+
+let currentTrial = 0;
+let block = practiceBlock.concat(testBlock1).concat(testBlock2);
+let startTime = 0;
+let results = [];
+
+const imageEl = document.getElementById("image");
+const stimulusEl = document.getElementById("stimulus");
+const categoryEl = document.getElementById("category");
+const endMessage = document.getElementById("endMessage");
+
+function showTrial() {
+    if (currentTrial >= block.length) {
+        categoryEl.style.display = "none";
+        stimulusEl.style.display = "none";
+        imageEl.style.display = "none";
+        endMessage.style.display = "block";
+        console.log("Results:", results);
+        return;
+    }
+
+    const trial = block[currentTrial];
+    imageEl.src = trial.img;
+    imageEl.style.display = "block";
+    stimulusEl.innerText = trial.word;
+
+    if (currentTrial === practiceBlock.length) {
+        categoryEl.innerText = 'Block 1: ' + eKeyLabel + ', ' + iKeyLabel;
+    } else if (currentTrial === practiceBlock.length + testBlock1.length) {
+        categoryEl.innerText = 'Block 2: ' +
+            (eKeyLabel === 'E = Professional' ? 'E = Unprofessional' : 'E = Professional') + ', ' +
+            (iKeyLabel === 'I = Professional' ? 'I = Unprofessional' : 'I = Professional');
+    }
+
+    startTime = Date.now();
+}
+
+document.addEventListener("keydown", function(event) {
+    const key = event.key.toLowerCase();
+    if (key === "e" || key === "i") {
+        const time = Date.now() - startTime;
+        const trial = block[currentTrial];
+        results.push({
+            trial: currentTrial + 1,
+            image: trial.img,
+            word: trial.word,
+            expected: trial.key,
+            pressed: key,
+            correct: key === trial.key,
+            time: time
+        });
+        currentTrial++;
+        showTrial();
+    }
+});
+
+showTrial();
+</script>
+
+</body>
+</html>
